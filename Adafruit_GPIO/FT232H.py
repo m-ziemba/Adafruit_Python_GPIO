@@ -708,6 +708,16 @@ class I2CDevice(object):
         response = self._transaction_end()
         self._verify_acks(response)
 
+    def writeRAWData(self, data):
+        """Write raw bytes to the bus."""
+        self._idle()
+        self._transaction_start()
+        self._i2c_start()
+        self._i2c_write_bytes([self._address_byte(False)] + data)
+        self._i2c_stop()
+        response = self._transaction_end()
+        self._verify_acks(response)
+
     def readList(self, register, length):
         """Read a length number of bytes from the specified register.  Results
         will be returned as a bytearray."""
@@ -720,6 +730,23 @@ class I2CDevice(object):
         self._i2c_stop()
         self._i2c_idle()
         self._i2c_start()
+        self._i2c_read_bytes(length)
+        self._i2c_stop()
+        response = self._transaction_end()
+        self._verify_acks(response[:-length])
+        return response[-length:]
+
+    def readRAWData(self, length):
+        """Read a length number of bytes from the bus.  Address/Register must 
+        be set  before (e.g. with writeRAWData command)!. Results will be 
+        returned as a bytearray."""
+        if length <= 0:
+            raise ValueError("Length must be at least 1 byte.")
+        self._idle()
+        self._transaction_start()
+        self._i2c_idle()
+        self._i2c_start()
+        self._i2c_write_bytes([self._address_byte(True)])
         self._i2c_read_bytes(length)
         self._i2c_stop()
         response = self._transaction_end()
